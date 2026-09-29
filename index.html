@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>aiRA Check-in Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+/* Light only, to match the reference screenshots. */
+:root{
+  /* aiRA tokens */
+  --aira-bg-canvas:#F6F8FA;
+  --aira-bg-surface:#FFFFFF;
+  --aira-bg-subtle:#F6F8FA;
+  --aira-bg-muted:#EEF1F4;
+  --aira-bg-brand:#3438C9;
+  --aira-bg-brand-subtle:#EEF0FF;
+  --aira-text-primary:#111827;
+  --aira-text-label:#1A2434;
+  --aira-text-secondary:#364152;
+  --aira-text-tertiary:#6B7785;
+  --aira-text-placeholder:#9AA4B2;
+  --aira-text-disabled:#9AA4B2;
+  --aira-text-link:#3438C9;
+  --aira-text-on-brand:#FFFFFF;
+  --aira-text-success:#185C32;
+  --aira-icon-success:#1F7A42;
+  --aira-border-default:#E2E6EB;
+  --aira-border-strong:#C9D0D9;
+  --aira-border-focus:#3438C9;
+  --aira-border-composer:#7C80D4;
+  --aira-bg-brand-hover:#252AA0;
+  --aira-bg-brand-subtle-hover:#E6E9FF;
+  --aira-bg-scrim:rgba(17,24,39,.35);
+  --aira-shadow-field-focus:0 0 0 3px rgba(52,56,201,.12);
+  --aira-bg-hover:#EEF1F4; --aira-bg-pressed:#E2E6EB; --aira-bg-disabled:#EEF1F4; --aira-border-subtle:#EEF1F4;
+  --aira-btn-primary-bg:#3438C9; --aira-btn-primary-bg-hover:#252AA0; --aira-btn-primary-bg-press:#1B2078; --aira-btn-primary-text:#FFFFFF;
+  --aira-btn-secondary-bg:#FFFFFF; --aira-btn-secondary-bg-hover:#F6F8FA; --aira-btn-secondary-bg-press:#EEF1F4; --aira-btn-secondary-text:#111827; --aira-btn-secondary-border:#C9D0D9;
+  --aira-btn-tertiary-bg-hover:#EEF1F4; --aira-btn-tertiary-bg-press:#E2E6EB; --aira-btn-tertiary-text:#364152;
+  --aira-border-success:#2A9D55; --aira-status-success-text:#185C32;
+  --aira-t-h4:600 16px/24px var(--aira-font-sans);
+  --aira-t-label-md:500 14px/20px var(--aira-font-sans);
+  --aira-t-body-md:400 14px/22px var(--aira-font-sans);
+  --host-avatar:#E0E2E8; --host-seg-border:#E0E0E0; --host-on-create:#FFFFFF;
+  --aira-radius-xs:4px; --aira-radius-sm:6px; --aira-radius-md:8px; --aira-radius-lg:12px; --aira-radius-xl:16px; --aira-radius-pill:999px;
+  --aira-shadow-sm:0 1px 3px rgba(17,24,39,.08), 0 1px 2px rgba(17,24,39,.04);
+  --aira-shadow-md:0 4px 8px -2px rgba(17,24,39,.10), 0 2px 4px -2px rgba(17,24,39,.06);
+  --aira-shadow-lg:0 12px 24px -6px rgba(17,24,39,.14), 0 4px 8px -4px rgba(17,24,39,.08);
+  --aira-motion-fast:120ms cubic-bezier(0.4,0,0.2,1);
+  --aira-motion-base:200ms cubic-bezier(0.4,0,0.2,1);
+  --aira-font-sans:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --aira-font-mono:ui-monospace,"SF Mono","Roboto Mono",Menlo,Consolas,monospace;
+  /* host chrome (Capillary shell, not aiRA tokens) */
+  --host-rail:#222222; --host-rail-active:#404040; --host-rail-icon:#D9D9D9; --host-rail-rule:#4A4A4A;
+  --host-topbar-line:#DFE1E3;
+  --host-config-band:#F8F9FF;
+  --host-tab-selected:#E9F1FC;
+  --host-config-label:#6A747E;
+  --host-config-value:#0C1323;
+  --host-config-fname:#5A677B;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--aira-bg-canvas);color:var(--aira-text-primary);font:400 14px/22px var(--aira-font-sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--aira-border-focus);outline-offset:2px;border-radius:var(--aira-radius-xs)}
+svg.lucide{stroke-width:1.5;flex:none}
+.mono{font-family:var(--aira-font-mono);font-size:13px}
+
+/* ---------- app shell ---------- */
+.app{display:flex;height:100%}
+.rail{width:64px;flex:none;background:var(--host-rail);display:flex;flex-direction:column;align-items:stretch;padding-top:10px}
+.rail .logo{height:44px;display:grid;place-items:center;margin-bottom:10px}
+.rail a{height:40px;display:grid;place-items:center;color:var(--host-rail-icon)}
+.rail a svg{width:20px;height:20px}
+.rail a.on{background:var(--host-rail-active)}
+.rail hr{border:0;border-top:1px solid var(--host-rail-rule);width:20px;margin:10px auto}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:55px;flex:none;background:var(--aira-bg-surface);border-bottom:1px solid var(--host-topbar-line);display:flex;align-items:center;padding:0 16px 0 38px}
+.space{display:flex;align-items:center;gap:6px;font-weight:500;font-size:15px;color:var(--aira-text-label)}
+.space svg{width:16px;height:16px}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.sessions{display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--aira-border-default);border-radius:var(--aira-radius-md);font-weight:500;color:var(--aira-text-label);background:var(--aira-bg-surface)}
+.sessions svg{width:16px;height:16px}
+.vrule{width:1px;height:28px;background:var(--aira-border-default)}
+.avatar{width:32px;height:32px;border-radius:var(--aira-radius-md);background:var(--host-avatar);display:grid;place-items:center;font-weight:500;color:var(--aira-text-label)}
+
+.body{flex:1;min-height:0;display:flex;position:relative}
+
+/* ---------- chat column ---------- */
+.chat{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
+.body.config-open .chat{flex:none;width:clamp(380px,35%,520px)}
+.thread{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--aira-border-strong) transparent}
+.col{max-width:800px;margin:0 auto;padding:0 16px}
+.body:not(.config-open) .chat{padding-right:316px}
+.thread .col{padding-top:20px;padding-bottom:16px;display:flex;flex-direction:column;gap:20px}
+.dock{flex:none;padding-bottom:18px}
+.dock .col{position:relative;display:flex;flex-direction:column;gap:8px;container-type:inline-size;container-name:dock}
+
+/* thread content */
+.artifact-card{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:12px 16px;border-radius:var(--aira-radius-lg);background:var(--aira-bg-brand-subtle);transition:background var(--aira-motion-fast)}
+.artifact-card:hover{background:var(--aira-bg-brand-subtle-hover)}
+.artifact-card .tile{width:36px;height:36px;border-radius:var(--aira-radius-md);background:var(--aira-bg-surface);display:grid;place-items:center;color:var(--aira-text-link)}
+.artifact-card .tile svg{width:20px;height:20px}
+.artifact-card .t{font-weight:500;color:var(--aira-text-label);line-height:20px}
+.artifact-card .v{font-size:12px;line-height:16px;color:var(--aira-text-tertiary)}
+.artifact-card .chev{margin-left:auto;color:var(--aira-text-secondary);width:18px;height:18px}
+.notes{background:var(--aira-bg-brand-subtle);border-radius:var(--aira-radius-lg);padding:14px 16px}
+.notes h4{margin:0 0 6px;font-size:15px;line-height:22px;font-weight:500;color:var(--aira-text-primary)}
+.notes ul,.msg ul{margin:0;padding-left:22px}
+.notes li,.msg li{margin:0}
+.msg{color:var(--aira-text-primary)}
+.msg p{margin:0 0 14px}
+.msg p:last-child{margin-bottom:0}
+.msg ul{margin:0 0 14px}
+.msg b{font-weight:500}
+.actions{display:flex;gap:4px;margin-top:-8px}
+.icon-btn{width:28px;height:28px;display:grid;place-items:center;border-radius:var(--aira-radius-sm);color:var(--aira-text-tertiary);transition:background var(--aira-motion-fast),color var(--aira-motion-fast)}
+.icon-btn:hover{background:var(--aira-bg-muted);color:var(--aira-text-secondary)}
+.icon-btn svg{width:18px;height:18px}
+.actions .icon-btn.on{color:var(--aira-text-link)}
+.actions .icon-btn.on svg{fill:currentColor}
+.activity{display:flex;align-items:center;gap:8px;color:var(--aira-text-secondary)}
+.activity svg{width:14px;height:14px;animation:spin 900ms linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.user-msg{align-self:flex-end;max-width:80%;background:var(--aira-bg-muted);border-radius:var(--aira-radius-lg);padding:8px 14px;color:var(--aira-text-primary)}
+.nudges{display:flex;flex-wrap:wrap;gap:12px;margin-top:-4px}
+.nudge{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 20px;border:1px solid var(--aira-border-default);border-radius:var(--aira-radius-pill);background:var(--aira-bg-surface);font-weight:500;font-size:15px;line-height:22px;color:var(--aira-text-label);transition:border-color var(--aira-motion-fast)}
+.nudge:hover{border-color:var(--aira-border-strong)}
+.nudge svg{width:16px;height:16px;color:var(--aira-bg-brand)}
+
+/* composer */
+.composer{display:flex;align-items:center;gap:10px;height:56px;padding:0 10px 0 18px;border:1px solid var(--aira-border-composer);border-radius:var(--aira-radius-pill);background:var(--aira-bg-surface)}
+.composer:focus-within{border-color:var(--aira-border-focus)}
+.composer input:focus-visible{outline:none}
+.composer .plus{color:var(--aira-text-secondary)}
+.composer input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:15px;color:var(--aira-text-primary)}
+.composer input::placeholder{color:var(--aira-text-placeholder)}
+.composer .mic{color:var(--aira-text-secondary)}
+.send{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--aira-bg-muted);color:var(--aira-bg-surface);transition:background var(--aira-motion-fast)}
+.send.ready{background:var(--aira-bg-brand)}
+.send svg{width:18px;height:18px;stroke-width:2}
+
+/* ---------- check-in strip ---------- */
+.checkin{background:var(--aira-bg-surface);border:1px solid var(--aira-border-default);border-radius:var(--aira-radius-lg);padding:16px;animation:rise var(--aira-motion-base) both}
+.checkin.leaving{animation:sink var(--aira-motion-fast) both}
+@keyframes rise{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
+@keyframes sink{to{opacity:0;translate:0 8px}}
+.ci-head{display:grid;grid-template-columns:1fr auto auto;grid-template-areas:"q a x";align-items:center;column-gap:12px;row-gap:12px}
+.ci-q{grid-area:q;margin:0;font:var(--aira-t-label-md);color:var(--aira-text-primary)}
+.ci-answers{grid-area:a;display:flex;gap:8px}
+.ci-close{grid-area:x}
+@container dock (max-width:560px){
+  .ci-head{grid-template-columns:1fr auto;grid-template-areas:"q x" "a a"}
+}
+.opt{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 16px;border:1px solid var(--aira-btn-secondary-border);border-radius:var(--aira-radius-md);background:var(--aira-btn-secondary-bg);font:var(--aira-t-label-md);color:var(--aira-btn-secondary-text);white-space:nowrap;transition:background var(--aira-motion-fast),border-color var(--aira-motion-fast)}
+.opt:hover{background:var(--aira-btn-secondary-bg-hover)}
+.opt:active{background:var(--aira-btn-secondary-bg-press)}
+/* Close: selection-card close (28px, tertiary at rest, primary on hover), 44px tap area on touch */
+/* Optical alignment: pull the 28px box out so the drawn X (Lucide leaves 6/24 of empty space round it) lines up with the fields and buttons below */
+.ci-close{position:relative;color:var(--aira-text-tertiary);margin-inline-end:-9px}
+.ci-close:hover{background:var(--aira-bg-hover);color:var(--aira-text-primary)}
+.ci-close svg{stroke-width:1.75}
+@media (pointer:coarse){.ci-close::after{content:"";position:absolute;inset:-8px}}
+.ci-step2{display:flex;flex-direction:column;gap:12px;animation:rise var(--aira-motion-base) both}
+.ci-head2{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ci-label{font:var(--aira-t-label-md);color:var(--aira-text-primary)}
+.ci-text,.modal textarea{display:block;width:100%;resize:none;border:1px solid var(--aira-border-default);border-radius:var(--aira-radius-sm);font:inherit;color:var(--aira-text-primary);background:var(--aira-bg-surface);transition:border-color var(--aira-motion-fast),box-shadow var(--aira-motion-fast)}
+.ci-text{min-height:42px;max-height:160px;padding:10px 12px 8px}
+.ci-text::placeholder,.modal textarea::placeholder{color:var(--aira-text-placeholder)}
+.ci-text:hover,.modal textarea:hover{border-color:var(--aira-border-strong)}
+.ci-text:focus,.modal textarea:focus{outline:none;border-color:var(--aira-border-focus);box-shadow:var(--aira-shadow-field-focus)}
+.ci-foot{display:flex;justify-content:flex-end;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 16px;font:var(--aira-t-label-md);border-radius:var(--aira-radius-md);border:1px solid transparent;white-space:nowrap;transition:background var(--aira-motion-fast),border-color var(--aira-motion-fast)}
+.btn-primary{background:var(--aira-btn-primary-bg);color:var(--aira-btn-primary-text)}
+.btn-primary:hover{background:var(--aira-btn-primary-bg-hover)}
+.btn-primary:active{background:var(--aira-btn-primary-bg-press)}
+.btn-tertiary{background:transparent;color:var(--aira-btn-tertiary-text)}
+.btn-tertiary:hover{background:var(--aira-btn-tertiary-bg-hover)}
+.btn-tertiary:active{background:var(--aira-btn-tertiary-bg-press)}
+.btn:disabled,.btn:disabled:hover,.btn:disabled:active{background:var(--aira-bg-disabled);color:var(--aira-text-disabled);border-color:var(--aira-border-subtle);cursor:not-allowed}
+
+/* toast */
+/* AiraToast, success tone, as published: icon + stacked title (Label md) and optional description (Body sm) */
+/* Spans the same width as the check-in card and composer (the column's content box) */
+.toast{position:absolute;left:16px;right:16px;bottom:calc(100% + 12px);display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--aira-bg-surface);border:1px solid var(--aira-border-default);border-radius:var(--aira-radius-md);box-shadow:var(--aira-shadow-md);animation:rise var(--aira-motion-base) both;z-index:5}
+.toast.success{border-color:var(--aira-border-success)}
+.toast .ic{width:20px;height:20px;color:var(--aira-status-success-text)}
+.toast .t1{font:var(--aira-t-label-md);color:var(--aira-text-primary)}
+.toast .t2{font:400 13px/20px var(--aira-font-sans);color:var(--aira-text-secondary)}
+.toast.leaving{animation:sink var(--aira-motion-fast) both}
+
+/* ---------- sidecar (config closed) ---------- */
+.sidecar{position:absolute;top:0;right:0;width:316px;padding:14px 16px 0 0;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.body.config-open .sidecar{display:none}
+.side-card{width:280px;background:var(--aira-bg-surface);border:1px solid var(--aira-border-default);border-radius:var(--aira-radius-lg);box-shadow:var(--aira-shadow-sm)}
+.side-sec{padding:14px 14px 12px;border-top:1px solid var(--aira-border-default)}
+.side-sec:first-child{border-top:0}
+.side-sec h5{margin:0 0 4px;display:flex;align-items:center;gap:4px;font-size:14px;font-weight:500;color:var(--aira-text-label)}
+.side-sec h5 svg{width:14px;height:14px;color:var(--aira-text-tertiary)}
+.side-sec .muted{color:var(--aira-text-tertiary);font-size:13px}
+.side-sec .row{display:flex;align-items:center;gap:6px;padding:4px 0;color:var(--aira-text-primary);font-size:13px;width:100%;text-align:left;border-radius:var(--aira-radius-xs)}
+.side-sec .row svg{width:14px;height:14px;color:var(--aira-text-tertiary)}
+.side-sec .row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side-sec .over{font-size:11px;line-height:16px;letter-spacing:.08em;color:var(--aira-text-tertiary);margin:6px 0 2px}
+
+/* ---------- config panel (host) ---------- */
+.config{flex:1;min-width:0;display:none;flex-direction:column;background:var(--aira-bg-surface);border-left:1px solid var(--host-topbar-line)}
+.body.config-open .config{display:flex}
+.cfg-head{display:flex;align-items:center;gap:8px;min-height:60px;padding:12px 16px;border-bottom:1px solid var(--aira-border-default)}
+.cfg-head .fname{font:var(--aira-t-label-md);color:var(--aira-text-secondary);margin-inline-end:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn svg{width:16px;height:16px}
+/* AiraIconButton: 32px, borderless, secondary -> primary on hover, 18px glyph at stroke 1.75 */
+.iconbtn{position:relative;width:32px;height:32px;display:inline-grid;place-items:center;border-radius:var(--aira-radius-sm);color:var(--aira-text-secondary);transition:background var(--aira-motion-fast),color var(--aira-motion-fast)}
+.iconbtn:hover{background:var(--aira-bg-hover);color:var(--aira-text-primary)}
+.iconbtn:active{background:var(--aira-bg-pressed)}
+.iconbtn svg{width:18px;height:18px;stroke-width:1.75}
+.cfg-head .vrule{height:20px;margin:0 4px;background:var(--aira-border-default)}
+/* Optical alignment: the drawn X sits ~11px inside its 32px box */
+.cfg-head .cfg-close{margin-inline-end:-11px}
+.cfg-scroll{flex:1;overflow-y:auto;padding:12px 16px 40px}
+.seg{display:inline-flex;border:1px solid var(--host-seg-border);border-radius:var(--aira-radius-xs);overflow:hidden;margin-bottom:6px}
+.seg button{height:26px;padding:0 12px;font-size:13px;color:var(--aira-text-secondary)}
+.seg button.on{background:var(--host-tab-selected);color:var(--aira-text-label);font-weight:500}
+details{margin:0}
+details > summary{list-style:none;display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;background:var(--host-config-band);font-weight:500;font-size:15px;color:var(--host-config-value);cursor:pointer}
+details > summary::-webkit-details-marker{display:none}
+details > summary::before{content:"";border:5px solid transparent;border-left:7px solid var(--host-config-value);border-right:0;transition:transform var(--aira-motion-fast);transform-origin:30% 50%}
+details[open] > summary::before{transform:rotate(90deg)}
+.dbody{padding:4px 0 6px 18px;border-left:1px solid var(--aira-border-default);margin-left:10px}
+.kv{display:grid;grid-template-columns:minmax(120px,200px) 1fr auto;gap:12px;padding:7px 10px;align-items:start}
+.kv .k{color:var(--host-config-label)}
+.kv .val{color:var(--host-config-value);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kv .pen{color:var(--aira-text-tertiary)}
+.kv .pen svg{width:14px;height:14px}
+.kv.inline{grid-template-columns:auto 1fr}
+.stack{padding:6px 10px 6px 16px;color:var(--host-config-value);font-weight:500;line-height:24px}
+
+/* ---------- contact support modal (existing) ---------- */
+.scrim{position:fixed;inset:0;background:var(--aira-bg-scrim);display:grid;place-items:center;z-index:20;backdrop-filter:blur(2px)}
+.modal{width:min(440px,calc(100% - 32px));background:var(--aira-bg-surface);border-radius:var(--aira-radius-lg);box-shadow:var(--aira-shadow-lg)}
+.modal .mh{padding:16px 20px 0}
+.modal .mh h3{margin:0;font-size:16px;line-height:24px;font-weight:500;color:var(--aira-text-label)}
+.modal .mb{padding:4px 20px 16px;display:flex;flex-direction:column;gap:8px;color:var(--aira-text-secondary)}
+.modal textarea{min-height:110px;padding:10px 12px 8px}
+.modal .mf{padding:12px 20px 16px;border-top:1px solid var(--aira-border-default);display:flex;justify-content:flex-end;gap:8px}
+
+/* ---------- prototype control (not product) ---------- */
+.proto{position:fixed;right:12px;bottom:10px;z-index:30;display:flex;align-items:center;gap:2px;padding:3px;background:rgba(17,24,39,.78);border-radius:var(--aira-radius-pill);font-size:12px;line-height:16px;color:#fff}
+.proto button{padding:4px 10px;border-radius:var(--aira-radius-pill)}
+.proto button:hover{background:rgba(255,255,255,.14)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Capillary">
+    <div class="logo" aria-hidden="true">
+      <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="10" cy="11" r="6.5" fill="none" stroke="#F4B400" stroke-width="3"/><circle cx="18" cy="11" r="6.5" fill="none" stroke="#E53935" stroke-width="3"/><circle cx="14" cy="18" r="6.5" fill="none" stroke="#1E88E5" stroke-width="3"/><circle cx="14" cy="14" r="2" fill="#43A047"/></svg>
+    </div>
+    <a href="#" aria-label="Home"><i data-lucide="house"></i></a>
+    <a href="#" class="on" aria-label="aiRA" aria-current="page"><i data-lucide="sparkles"></i></a>
+    <a href="#" aria-label="Loyalty"><i data-lucide="tag"></i></a>
+    <a href="#" aria-label="Engage"><i data-lucide="megaphone"></i></a>
+    <a href="#" aria-label="Experiences"><i data-lucide="columns-2"></i></a>
+    <a href="#" aria-label="Rewards"><i data-lucide="gift"></i></a>
+    <a href="#" aria-label="Audiences"><i data-lucide="users"></i></a>
+    <a href="#" aria-label="Channels"><i data-lucide="network"></i></a>
+    <a href="#" aria-label="Member care"><i data-lucide="life-buoy"></i></a>
+    <a href="#" aria-label="Insights"><i data-lucide="chart-column"></i></a>
+    <hr>
+    <a href="#" aria-label="Data management"><i data-lucide="file-cog"></i></a>
+    <a href="#" aria-label="Extensions"><i data-lucide="code"></i></a>
+    <hr>
+    <a href="#" aria-label="Settings"><i data-lucide="settings"></i></a>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="space">DemoSpace <i data-lucide="chevron-down"></i></div>
+      <div class="right">
+        <button class="sessions"><i data-lucide="message-square"></i>Sessions</button>
+        <span class="vrule"></span>
+        <span class="avatar" aria-label="Your account">A</span>
+      </div>
+    </header>
+
+    <div class="body config-open" id="body">
+      <section class="chat" aria-label="Chat">
+        <div class="thread" id="thread">
+          <div class="col" id="threadCol">
+            <button class="artifact-card" data-open-config>
+              <span class="tile"><i data-lucide="file-text"></i></span>
+              <span><span class="t" style="display:block">txn_welcome_journey.config</span><span class="v">v1</span></span>
+              <i data-lucide="chevron-right" class="chev"></i>
+            </button>
+
+            <div class="notes">
+              <h4>Assumptions &amp; Notes</h4>
+              <ul>
+                <li>Approving will create this journey as a DRAFT only. After creation, ask to 'send this journey for approval' to submit it conversationally.</li>
+                <li>Using default points program: DemoSpaceDefaultProgram</li>
+                <li><b style="font-weight:500">Note:</b> In the campaign creation flow, 'module_type' is always set to 'ENGAGE' for both allocation and expiry strategies.</li>
+                <li>Push Notification Account changed from <span class="mono">['DemoSpace']</span> to <span class="mono">['PN_BUKL']</span>.</li>
+                <li>Using existing allocation strategy: <span class="mono">AIRA_902370515</span>, other matches <span class="mono">[]</span></li>
+              </ul>
+            </div>
+
+            <div class="msg">
+              <p>Journey's ready for your review — it's in the UI now with a Create CTA. Here's what it does:</p>
+              <ul>
+                <li><b>Enters:</b> loyal customers with total bill amount ≥ $1 (last 365 days, dynamic — refreshes as customers transact)</li>
+                <li><b>Step 1:</b> push notification — <i>"Thanks for shopping with us!"</i> / <i>"We've added 50 points to your account as a thank-you..."</i></li>
+                <li><b>Step 2:</b> 50 fixed loyalty points (points program <span class="mono">DemoSpaceDefaultProgram</span>)</li>
+                <li><b>Exit</b> after points</li>
+              </ul>
+              <p>Two things worth knowing:</p>
+              <p><b>Push account</b> — "DemoSpace" resolved to the org's actual MOBILEPUSH account PN_BUKL, so the push fires through that.<br>
+              <b>Trigger reality</b> — a journey enters customers from an audience, so this reacts to <i>audience membership</i>, not each live transaction. If you actually want <i>"the instant any customer bills ≥ $1, fire push + award points"</i> on the transaction event itself, that's a <b>promotion</b>, not a journey — say the word and I'll build that version instead.</p>
+              <p>Approving creates it as a <b>draft</b>. Once you're happy, tell me to "send this journey for approval" and I'll submit it. Want any changes to the copy, points, or audience window first?</p>
+            </div>
+            <div class="actions" data-actions></div>
+          </div>
+        </div>
+
+        <div class="dock">
+          <div class="col" id="dockCol">
+            <div id="checkinHost"></div>
+            <form class="composer" id="composer" autocomplete="off">
+              <button type="button" class="icon-btn plus" aria-label="Add attachment"><i data-lucide="plus"></i></button>
+              <input id="composerInput" aria-label="Message aiRA" placeholder="What's our mission today?">
+              <button type="button" class="icon-btn mic" aria-label="Voice input"><i data-lucide="mic"></i></button>
+              <button type="submit" class="send" id="sendBtn" aria-label="Send"><i data-lucide="arrow-up"></i></button>
+            </form>
+            <div id="toastHost"></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="config" aria-label="txn_welcome_journey.config">
+        <div class="cfg-head">
+          <span class="fname">txn_welcome_journey.config</span>
+          <button class="btn btn-primary" id="createBtn">Create</button>
+          <button class="iconbtn" aria-label="Download config"><i data-lucide="download"></i></button>
+          <button class="iconbtn" aria-label="Copy config"><i data-lucide="copy"></i></button>
+          <span class="vrule"></span>
+          <button class="iconbtn cfg-close" id="closeConfig" aria-label="Close config"><i data-lucide="x"></i></button>
+        </div>
+        <div class="cfg-scroll">
+          <div class="seg" role="tablist"><button role="tab" aria-selected="false">Journey</button><button role="tab" aria-selected="true" class="on">Details</button></div>
+          <details open><summary>Journey</summary>
+            <div class="dbody" style="border-left:0;margin-left:0;padding-left:8px">
+              <div class="kv"><span class="k">Name:</span><span class="val">Transaction Welcome - Push + 50 Points</span><span class="pen"><i data-lucide="pencil"></i></span></div>
+              <div class="kv"><span class="k">Description:</span><span class="val">Enters customers who have transacted &gt;= $1, sends a thank-you push notification and awards 50 loyalty points</span><span class="pen"><i data-lucide="pencil"></i></span></div>
+              <details open><summary>Schedule</summary>
+                <div class="dbody">
+                  <div class="kv"><span class="k">Start:</span><span class="val">Immediate</span></div>
+                  <div class="kv"><span class="k">End:</span><span class="val">Never</span></div>
+                </div>
+              </details>
+              <details open><summary>Journey settings</summary>
+                <div class="dbody">
+                  <div class="kv inline"><span class="k">Frequency of a customer entering the journey:</span><span class="val">Only once</span></div>
+                  <div class="kv inline"><span class="k">Customers can be in this journey simultaneously:</span><span class="val">Only once</span></div>
+                  <div class="kv inline"><span class="k">Allow global control customers to enter the journey:</span><span class="val">No</span></div>
+                  <div class="kv inline"><span class="k">Ignore subscription status for all communications channels:</span><span class="val">No</span></div>
+                  <div class="kv"><span class="k">Shorten URL:</span><span class="val">No</span></div>
+                </div>
+              </details>
+              <details open><summary>Delivery Settings</summary>
+                <div class="dbody">
+                  <details open><summary>SMS</summary>
+                    <div class="dbody"><div class="stack">Sender ID<br>Domain ID</div><div class="kv"><span class="k">Target NDNC:</span><span class="val">No</span></div></div>
+                  </details>
+                  <details open><summary>Email</summary>
+                    <div class="dbody"><div class="stack">Sender<br>Reply-To<br>Sender Label<br>Domain ID</div></div>
+                  </details>
+                  <details open><summary>Push Notification</summary>
+                    <div class="dbody"><div class="kv"><span class="k">Account:</span><span class="val">PN_BUKL</span></div></div>
+                  </details>
+                </div>
+              </details>
+            </div>
+          </details>
+        </div>
+      </aside>
+
+      <aside class="sidecar" aria-label="Session details">
+        <button class="icon-btn" aria-label="Share"><i data-lucide="share-2"></i></button>
+        <div class="side-card">
+          <div class="side-sec"><h5>Progress <i data-lucide="chevron-down"></i></h5><div class="muted">No tasks yet</div></div>
+          <div class="side-sec"><h5>Working folder <i data-lucide="chevron-down"></i></h5>
+            <button class="row" data-open-config><i data-lucide="chevron-right"></i><span>txn_welcome_journey.config</span></button></div>
+          <div class="side-sec"><h5>Context <i data-lucide="chevron-down"></i></h5>
+            <div class="over">DOCUMENTS</div>
+            <div class="row"><i data-lucide="file-text"></i><span>api/messages/Summer Sale Alert - Push Notification</span></div></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div class="proto" aria-label="Prototype controls">
+  <button id="protoRestart">Restart</button>
+</div>
+
+<script>
+(function(){
+  const $ = (s, r=document) => r.querySelector(s);
+  const icons = () => { try { lucide.createIcons({attrs:{'stroke-width':1.5}}); } catch(e){} };
+
+  const body = $('#body'), threadCol = $('#threadCol'), thread = $('#thread');
+  const host = $('#checkinHost'), toastHost = $('#toastHost');
+  const input = $('#composerInput'), sendBtn = $('#sendBtn'), createBtn = $('#createBtn');
+
+  const ANSWERS = [{id:'yes',label:'Yes'},{id:'partly',label:'Partly'},{id:'no',label:'No'}];
+
+  let S; // session state
+  let timers = [];
+  const later = (fn, ms) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
+
+  function reset(){
+    timers.forEach(clearTimeout); timers = [];
+    S = { used:false, pending:false, answer:null, text:'' };
+    threadCol.querySelectorAll('[data-dyn]').forEach(n => n.remove());
+    host.innerHTML = ''; toastHost.innerHTML = '';
+    createBtn.disabled = false; createBtn.innerHTML = 'Create';
+    input.value = ''; syncSend();
+    setConfig(true);
+    renderActions(threadCol.querySelector('[data-actions]'));
+    icons();
+    thread.scrollTop = thread.scrollHeight;
+    jobFinished();                    // the config has just been delivered
+  }
+
+  /* ---------- layout ---------- */
+  function setConfig(open){ body.classList.toggle('config-open', open); pin(); }
+  const pin = () => requestAnimationFrame(() => { thread.scrollTop = thread.scrollHeight; });
+  new ResizeObserver(pin).observe(document.querySelector('.dock'));
+  document.addEventListener('click', e => { if (e.target.closest('[data-open-config]')) setConfig(true); });
+  $('#closeConfig').addEventListener('click', () => setConfig(false));
+
+  /* ---------- action row (existing) ---------- */
+  function renderActions(el){
+    el.innerHTML = `<button class="icon-btn" data-thumb aria-label="Good response" aria-pressed="false"><i data-lucide="thumbs-up"></i></button>
+      <button class="icon-btn" data-thumb aria-label="Bad response" aria-pressed="false"><i data-lucide="thumbs-down"></i></button>
+      <button class="icon-btn" data-support aria-label="Contact support"><i data-lucide="message-square-warning"></i></button>`;
+  }
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-thumb]');
+    if (t){
+      const row = t.parentElement, was = t.classList.contains('on');
+      row.querySelectorAll('[data-thumb]').forEach(b => { b.classList.remove('on'); b.setAttribute('aria-pressed','false'); });
+      if (!was){ t.classList.add('on'); t.setAttribute('aria-pressed','true'); }
+    }
+    if (e.target.closest('[data-support]')) openSupport();
+  });
+
+  function openSupport(){
+    const d = document.createElement('div');
+    d.className = 'scrim';
+    d.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="supT">
+      <div class="mh"><h3 id="supT">Contact support</h3></div>
+      <div class="mb"><label for="supX">Tell aiRA what's wrong</label><textarea id="supX" placeholder="What's the issue?"></textarea></div>
+      <div class="mf"><button class="btn btn-tertiary" data-c>Cancel</button><button class="btn btn-primary" data-s disabled>Submit</button></div></div>`;
+    document.body.appendChild(d);
+    const ta = d.querySelector('textarea'), sb = d.querySelector('[data-s]');
+    ta.focus();
+    ta.addEventListener('input', () => sb.disabled = !ta.value.trim());
+    const close = () => d.remove();
+    d.querySelector('[data-c]').onclick = close;
+    sb.onclick = () => { close(); toast('Feedback sent'); };
+    d.addEventListener('click', e => { if (e.target === d) close(); });
+    d.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  }
+
+  /* ---------- thread helpers ---------- */
+  function append(html){
+    const w = document.createElement('div'); w.innerHTML = html.trim();
+    const nodes = [...w.children];
+    nodes.forEach(n => { n.dataset.dyn = '1'; threadCol.appendChild(n); });
+    icons(); thread.scrollTop = thread.scrollHeight;
+    return nodes;
+  }
+  function aiReply(activity, html, extra){
+    const [row] = append(`<div class="activity"><i data-lucide="loader-circle"></i>${activity}</div>`);
+    return new Promise(res => later(() => {
+      row.remove();
+      append(`<div class="msg">${html}</div>`);
+      const [a] = append(`<div class="actions"></div>`); renderActions(a);
+      if (extra) append(extra);
+      icons(); thread.scrollTop = thread.scrollHeight;
+      res();
+    }, 1400));
+  }
+
+  /* ---------- trigger: job finishes ---------- */
+  createBtn.addEventListener('click', async () => {
+    createBtn.disabled = true;
+    createBtn.innerHTML = '<i data-lucide="check"></i>Created'; icons();
+    await aiReply('Creating journey',
+      `<p>Created <b>Transaction Welcome - Push + 50 Points</b> as a draft.</p><p>To submit it, say "send this journey for approval".</p>`,
+      `<div class="nudges"><button class="nudge" data-nudge="Send this journey for approval"><i data-lucide="send"></i>Send this journey for approval</button></div>`);
+  });
+
+  function jobFinished(){
+    if (S.used) return;               // one per session
+    S.pending = true;                 // checks passed; wait ~2s so the answer can be read
+    later(() => { if (S.pending) showCheckin(); }, 2000);
+  }
+
+  /* ---------- check-in strip ---------- */
+  function showCheckin(){
+    S.pending = false; S.used = true;
+    host.innerHTML = `<div class="checkin" role="region" aria-label="Session feedback" id="ci">
+      <div class="ci-head">
+        <p class="ci-q" id="ciQ">Was aiRA helpful in this session?</p>
+        <div class="ci-answers" role="group" aria-labelledby="ciQ">
+          ${ANSWERS.map(a => `<button class="opt" data-ans="${a.id}">${a.label}</button>`).join('')}
+        </div>
+        <button class="icon-btn ci-close" aria-label="Dismiss" data-dismiss><i data-lucide="x"></i></button>
+      </div>
+    </div>
+    <div class="sr" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Was aiRA helpful in this session? Answer above the message box.</div>`;
+    icons();
+    const ci = $('#ci');
+    ci.addEventListener('click', onStripClick);
+    ci.addEventListener('keydown', onStripKey);
+    ci.addEventListener('input', e => {
+      if (e.target.id === 'ciText'){ S.text = e.target.value; grow(e.target); syncSubmit(); }
+    });
+  }
+
+  function onStripClick(e){
+    const ans = e.target.closest('[data-ans]');
+    if (ans){ pick(ans.dataset.ans); return; }
+    if (e.target.closest('[data-dismiss]')) return closeCheckin('dismissed');
+    if (e.target.closest('[data-skip]')) return closeCheckin('skipped');
+    if (e.target.closest('[data-submit]')) return thanks();
+  }
+  function onStripKey(e){
+    if (e.key === 'Escape'){ e.preventDefault(); closeCheckin('dismissed'); return; }
+    if (e.target.tagName === 'TEXTAREA') return;
+    const i = ['1','2','3'].indexOf(e.key);
+    if (i > -1){ e.preventDefault(); pick(ANSWERS[i].id); }
+  }
+
+  function pick(id){
+    if (S.answer) return;
+    S.answer = id;                                   // saved on first tap
+    if (id === 'yes'){ thanks(); return; }            // Yes: no follow-up
+    $('#ci').innerHTML = `<div class="ci-step2">
+      <div class="ci-head2">
+        <p class="ci-q" id="ciT">What got in the way?</p>
+        <button class="icon-btn ci-close" aria-label="Dismiss" data-dismiss><i data-lucide="x"></i></button>
+      </div>
+      <textarea id="ciText" class="ci-text" rows="1" placeholder="Optional" aria-labelledby="ciT"></textarea>
+      <div class="ci-foot">
+        <button class="btn btn-tertiary" data-skip>Skip</button>
+        <button class="btn btn-primary" data-submit disabled>Send feedback</button>
+      </div>
+    </div>`;
+    icons(); syncSubmit();
+    $('#ciText').focus({preventScroll:true});
+  }
+
+  function grow(ta){ ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight + 2, 160) + 'px'; }
+  function syncSubmit(){
+    const b = host.querySelector('[data-submit]'); if (!b) return;
+    b.disabled = !S.text.trim();
+  }
+
+  // The strip closes and a short toast confirms; no close button, gone after 2s
+  function thanks(){
+    closeCheckin('sent');
+    later(() => toast('Thank you for your feedback', 2000), 150);
+  }
+
+  function closeCheckin(how){
+    const ci = $('#ci'); if (!ci) return;
+    ci.classList.add('leaving');
+    later(() => { host.innerHTML = ''; }, 150);
+  }
+
+  function toast(text, ms = 4000){
+    toastHost.innerHTML = `<div class="toast success" role="status"><i data-lucide="circle-check" class="ic"></i><div><div class="t1">${text}</div></div></div>`;
+    icons();
+    later(() => { const t = toastHost.firstElementChild; if (t){ t.classList.add('leaving'); later(() => toastHost.innerHTML = '', 150); } }, ms);
+  }
+
+  /* ---------- composer ---------- */
+  function syncSend(){ sendBtn.classList.toggle('ready', !!input.value.trim()); }
+  input.addEventListener('input', syncSend);
+  document.addEventListener('click', e => {
+    const n = e.target.closest('[data-nudge]');
+    if (n){ input.value = n.dataset.nudge; syncSend(); input.focus(); }
+  });
+  $('#composer').addEventListener('submit', async e => {
+    e.preventDefault();
+    const text = input.value.trim(); if (!text) return;
+    input.value = ''; syncSend();
+    // Ignored path: sending closes the strip quietly, and a pending check-in is dropped.
+    if ($('#ci')) closeCheckin('ignored');
+    if (S.pending){ S.pending = false; S.used = true; }
+    threadCol.querySelectorAll('.nudges').forEach(n => n.remove());
+    append(`<div class="user-msg"></div>`)[0].textContent = text;
+    if (/approval/i.test(text)){
+      await aiReply('Sending journey for approval', `<p>Sent <b>Transaction Welcome - Push + 50 Points</b> for approval.</p>`);
+    } else {
+      await aiReply('Reading your message', `<p>The journey is saved as a draft and nothing else has changed. Tell me what to update: the copy, the points, or the audience window.</p>`);
+    }
+  });
+
+  $('#protoRestart').addEventListener('click', reset);
+
+  reset();
+})();
+</script>
+</body>
+</html>
